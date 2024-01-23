@@ -37,8 +37,6 @@ pr_head = pr_head.cuda()
 for param in model.parameters():
     param.requires_grad = False
 
-#Set optimizer
-optim = torch.optim.Adam(pr_head.parameters(), 1e-3)
     
 #Load datasets and loaders
 file_path = './output_train.jsonl'
@@ -57,6 +55,8 @@ f.write("attention_block,token_acc\n")
 for j in range(1, 11):
     print(f"Attention Block {j}")
     pr_head.load_state_dict(pr_state_dict)
+    #Set optimizer
+    optim = torch.optim.Adam(pr_head.parameters(), 1e-3)
     #Training
     pr_head.train()
     for i in range(2):
@@ -96,3 +96,4 @@ for j in range(1, 11):
             l += text2["input_ids"].view(-1).shape[0]
             itrt2.set_postfix_str(f"{acc_sum/l:.4f}")
     f.write(f"{j},{acc_sum/l:.4f}\n")
+    del optim
