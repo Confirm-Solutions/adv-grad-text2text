@@ -6,6 +6,7 @@ from tqdm import tqdm
 from torch import nn
 from additional_components.pr_head import ProjectionHead
 from dataset import CustomDataset
+import copy
 
 # Load pre-trained GPT-2 model and tokenizer
 model_name = 'gpt2'
@@ -19,12 +20,14 @@ model.eval()
 seed = 42
 np.random.seed(seed)
 torch.random.manual_seed(seed)
+torch.manual_seed(seed)
 torch.cuda.manual_seed(seed)
 tokenizer = GPT2Tokenizer.from_pretrained(model_name)
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.padding_side = 'left'
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 pr_head = ProjectionHead(config.n_embd, config.vocab_size, config.layer_norm_epsilon)
+pr_state_dict = copy.deepcopy(pr_head.state_dict())
 pr_head = pr_head.cuda()
 for param in model.parameters():
     param.requires_grad = False
@@ -43,6 +46,7 @@ f.write("attention_block,token_acc\n")
 #Training
 for j in range(1, 11):
     print(f"Attention Block {j}")
+    pr_head.load_state_dict(pr_state_dict)
     for i in range(2):
         l_mean = 0
         k = 0
