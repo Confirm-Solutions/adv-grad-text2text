@@ -1,5 +1,6 @@
 import json
 import random
+random.seed(42)
 
 def sample_jsonl(input_file, output_train_file, output_test_file, train_samples=8000, test_samples=2000):
     # Read all lines from the input JSONL file
