@@ -37,7 +37,8 @@ file_path2 = './output_test.jsonl'
 test_dataset = CustomDataset(file_path2)
 test_loader = DataLoader(test_dataset, 5, shuffle=False, pin_memory=True)
 
-f = open("./results.txt", "w")
+f = open("./results.csv", "w")
+f.write("attention_block,token_acc\n")
 #Training
 for j in range(1, 11):
     print(f"Attention Block {j}")
@@ -70,5 +71,5 @@ for j in range(1, 11):
             acc_sum += (torch.argmax(out, dim=1) ==  text2["input_ids"].cuda().view(-1)).sum().cpu().item()
             l += text2["input_ids"].view(-1).shape[0]
             itrt2.set_postfix_str(f"{acc_sum/l:.4f}")
-    f.writeline(f"block {j} - {acc_sum/l:.4f}")
+    f.write(f"{j},{acc_sum/l:.4f}\n")
 #Testing
