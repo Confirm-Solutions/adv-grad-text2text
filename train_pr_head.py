@@ -1,4 +1,4 @@
-from transformers import GPT2Tokenizer, GPT2LMHeadModel
+from transformers import GPT2Config, GPT2Tokenizer, GPT2LMHeadModel
 import torch
 from torch.utils.data import DataLoader
 import numpy as np
@@ -9,7 +9,8 @@ from dataset import CustomDataset
 
 # Load pre-trained GPT-2 model and tokenizer
 model_name = 'gpt2'
-model = GPT2LMHeadModel.from_pretrained(model_name, output_hidden_states=True)
+config =  GPT2Config()
+model = GPT2LMHeadModel.from_pretrained(model_name, config, output_hidden_states=True)
 model = model.cuda()
 model.eval()
 
@@ -22,7 +23,7 @@ tokenizer = GPT2Tokenizer.from_pretrained(model_name)
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.padding_side = 'left'
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-pr_head = ProjectionHead()
+pr_head = ProjectionHead(config.n_embd, config.vocab_size, config.layer_norm_epsilon)
 pr_head = pr_head.cuda()
 for param in model.parameters():
     param.requires_grad = False
