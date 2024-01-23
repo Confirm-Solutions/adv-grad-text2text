@@ -71,7 +71,7 @@ for j in range(1, 11):
         text2 = tokenizer(text2, padding=True, truncation=True, return_tensors='pt', max_length=1024)
         with torch.no_grad():
             hidden_states = model(text2["input_ids"].cuda(), attention_mask=text2["attention_mask"].cuda())
-            out = pr_head(hidden_states[2][1].detach().clone())
+            out = pr_head(hidden_states[2][j].detach().clone())
             del hidden_states
             acc_sum += (torch.argmax(out, dim=1) ==  text2["input_ids"].cuda().view(-1)).sum().cpu().item()
             l += text2["input_ids"].view(-1).shape[0]
