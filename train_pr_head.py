@@ -36,37 +36,38 @@ file_path2 = './output_test.jsonl'
 test_dataset = CustomDataset(file_path2)
 test_loader = DataLoader(test_dataset, 5, shuffle=False, pin_memory=True)
 
+f = open("./results.txt", "w")
 #Training
-itrt = tqdm(loader)
-for i in range(5):
-    l_mean = 0
-    k = 0
-    for text in itrt:
-        text = tokenizer(text, padding=True, truncation=True, return_tensors='pt', max_length=1024)
+for j in range(1, 11):
+    print(f"Attention Block {j}")
+    for i in range(2):
+        l_mean = 0
+        k = 0
+        itrt = tqdm(loader)
+        itrt.set_description(f"Epoch {i}")
+        for text in itrt:
+            text = tokenizer(text, padding=True, truncation=True, return_tensors='pt', max_length=1024)
+            with torch.no_grad():
+                hidden_states = model(text["input_ids"].cuda(), attention_mask=text["attention_mask"].cuda())
+            loss = pr_head(hidden_states[2][j].detach().clone(), pr_labels=text["input_ids"].cuda())
+            del hidden_states
+            optim.zero_grad()
+            loss.backward()
+            optim.step()
+            l_mean += loss.cpu().item()
+            k+=1
+            itrt.set_postfix_str(f"{l_mean/k:.3f}")
+    itrt2 = tqdm(test_loader)
+    acc_sum = 0
+    l = 0
+    for text2 in itrt2:
+        text2 = tokenizer(text2, padding=True, truncation=True, return_tensors='pt', max_length=1024)
         with torch.no_grad():
-            hidden_states = model(text["input_ids"].cuda(), attention_mask=text["attention_mask"].cuda())
-        loss = pr_head(hidden_states[2][1].detach().clone(), pr_labels=text["input_ids"].cuda())
-        del hidden_states
-        optim.zero_grad()
-        loss.backward()
-        optim.step()
-        l_mean += loss.cpu().item()
-        k+=1
-        if k == 20:
-            torch.cuda.empty_cache()
-            torch.save(pr_head.state_dict(), "./pr_head.pt")
-            break
-        itrt.set_postfix_str(f"{l_mean/k:.3f}")
+            hidden_states = model(text2["input_ids"].cuda(), attention_mask=text2["attention_mask"].cuda())
+            out = pr_head(hidden_states[2][1].detach().clone())
+            del hidden_states
+            acc_sum += (torch.argmax(out, dim=1) ==  text2["input_ids"].cuda().view(-1)).sum().cpu().item()
+            l += text2["input_ids"].view(-1).shape[0]
+            itrt2.set_postfix_str(f"{acc_sum/l:.4f}")
+    f.writeline(f"block {j} - {acc_sum/l:.4f}")
 #Testing
-itrt2 = tqdm(test_loader)
-acc_sum = 0
-l = 0
-for text2 in itrt2:
-    text2 = tokenizer(text2, padding=True, truncation=True, return_tensors='pt', max_length=1024)
-    with torch.no_grad():
-        hidden_states = model(text2["input_ids"].cuda(), attention_mask=text2["attention_mask"].cuda())
-        out = pr_head(hidden_states[2][1].detach().clone())
-        del hidden_states
-        acc_sum += (torch.argmax(out, dim=1) ==  text2["input_ids"].cuda().view(-1)).sum().cpu().item()
-        l += text2["input_ids"].view(-1).shape[0]
-        itrt2.set_postfix_str(f"{acc_sum/l:.4f}")
