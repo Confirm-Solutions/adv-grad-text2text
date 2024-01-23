@@ -10,7 +10,8 @@ from dataset import CustomDataset
 # Load pre-trained GPT-2 model and tokenizer
 model_name = 'gpt2'
 config =  GPT2Config()
-model = GPT2LMHeadModel.from_pretrained(model_name, config=config, output_hidden_states=True)
+config.output_hidden_states = True
+model = GPT2LMHeadModel.from_pretrained(model_name, config=config)
 model = model.cuda()
 model.eval()
 
