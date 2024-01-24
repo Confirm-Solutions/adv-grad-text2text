@@ -50,7 +50,7 @@ test_loader = DataLoader(test_dataset, 5, shuffle=False, pin_memory=True)
 #Create log
 f = open("./results.csv", "w")
 f.write("attention_block,token_acc\n")
-
+f.flush()
 #Training and testing per attention block
 for j in range(1, 11):
     print(f"Attention Block {j}")
@@ -96,4 +96,5 @@ for j in range(1, 11):
             l += text2["input_ids"].view(-1).shape[0]
             itrt2.set_postfix_str(f"{acc_sum/l:.4f}")
     f.write(f"{j},{acc_sum/l:.4f}\n")
+    f.flush()
     del optim
