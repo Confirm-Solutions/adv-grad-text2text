@@ -52,7 +52,7 @@ f = open("./results.csv", "w")
 f.write("attention_block,token_acc\n")
 f.flush()
 #Training and testing per attention block
-for j in range(1, 11):
+for j in range(1, 12):
     print(f"Attention Block {j}")
     pr_head.load_state_dict(pr_state_dict)
     #Set optimizer
