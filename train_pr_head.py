@@ -52,7 +52,7 @@ f = open("./results.csv", "w")
 f.write("attention_block,token_acc\n")
 f.flush()
 #Training and testing per attention block
-for j in range(1, 12):
+for j in range(1,12):
     print(f"Attention Block {j}")
     pr_head.load_state_dict(pr_state_dict)
     #Set optimizer
@@ -70,7 +70,7 @@ for j in range(1, 12):
             with torch.no_grad():
                 hidden_states = model(text["input_ids"].cuda(), attention_mask=text["attention_mask"].cuda())
             #Reconstruct inputb and compute loss
-            loss = pr_head(hidden_states[2][j].detach().clone(), pr_labels=text["input_ids"].cuda())
+            loss = pr_head(hidden_states[2][j].detach().clone(), pr_labels=text["input_ids"].cuda(), mask=text["attention_mask"])
             del hidden_states
             optim.zero_grad()
             loss.backward()
@@ -81,6 +81,7 @@ for j in range(1, 12):
     #Testing
     itrt2 = tqdm(test_loader)
     acc_sum = 0
+    torch.save(pr_head.state_dict(), f"./pr_head{j}.pt")
     pr_head.eval()
     l = 0
     for text2 in itrt2:
@@ -90,10 +91,13 @@ for j in range(1, 12):
             hidden_states = model(text2["input_ids"].cuda(), attention_mask=text2["attention_mask"].cuda())
             #Reconstruct input
             out = pr_head(hidden_states[2][j].detach().clone())
+            two_d_indices = torch.nonzero(text2["attention_mask"].cuda() == 1)
+            selected_logits = out[two_d_indices[:, 0], two_d_indices[:, 1], :]
+            selected_labels = text2["input_ids"].cuda()[two_d_indices[:, 0], two_d_indices[:, 1]]
             del hidden_states
             #Compute accuracy
-            acc_sum += (torch.argmax(out, dim=1) ==  text2["input_ids"].cuda().view(-1)).sum().cpu().item()
-            l += text2["input_ids"].view(-1).shape[0]
+            acc_sum += (torch.argmax(selected_logits, dim=1) ==  selected_labels).sum().cpu().item()
+            l += selected_labels.shape[0]
             itrt2.set_postfix_str(f"{acc_sum/l:.4f}")
     f.write(f"{j},{acc_sum/l:.4f}\n")
     f.flush()
